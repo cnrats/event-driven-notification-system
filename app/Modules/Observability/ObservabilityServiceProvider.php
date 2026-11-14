@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace App\Modules\Observability;
 
+use App\Modules\Observability\Http\Controllers\HealthController;
+use App\Modules\Observability\Http\Controllers\MetricsController;
 use App\Modules\Observability\Metrics\Metrics;
 use App\Support\NotificationsConfig;
 use Illuminate\Contracts\Config\Repository;
 use Illuminate\Contracts\Foundation\Application;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Psr\Log\LoggerInterface;
 use Redis;
@@ -46,5 +49,16 @@ final class ObservabilityServiceProvider extends ServiceProvider
 
             return new Metrics($connect, $app->make(LoggerInterface::class));
         });
+    }
+
+    public function boot(): void
+    {
+        Route::middleware('api')->prefix('api/v1')->group(static function (): void {
+            Route::get('health', HealthController::class);
+            Route::get('metrics', [MetricsController::class, 'json']);
+        });
+
+        // Scrape endpoint for Prometheus, in the text exposition format.
+        Route::get('metrics', [MetricsController::class, 'prometheus']);
     }
 }
