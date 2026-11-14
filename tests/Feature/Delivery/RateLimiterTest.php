@@ -47,7 +47,7 @@ it('never hands out more than 100 slots in any one-second window', function (): 
 
     expect(maxPerSecond($slots))->toBeLessThanOrEqual(100)
         // ...and the limiter is not needlessly slow: 500 slots take about 5 s.
-        ->and(($slots[499] - $start) / 1_000_000)->toBeGreaterThan(4.9)->toBeLessThan(5.5);
+        ->and(($slots[499] - $start) / 1_000_000)->toBeGreaterThan(5.0)->toBeLessThan(5.6);
 });
 
 it('spaces slots evenly instead of allowing a burst at the window edge', function (): void {
@@ -61,8 +61,8 @@ it('spaces slots evenly instead of allowing a burst at the window edge', functio
 });
 
 it('applies the safety margin to the slot interval', function (): void {
-    // 100/s would be 10 000 us; with the 3 % margin a slot is 10 300 us.
-    expect($this->limiter->intervalMicros(Channel::Sms))->toBe(10_300);
+    // 100/s would be 10 000 us; with the 5 % margin a slot is 10 500 us.
+    expect($this->limiter->intervalMicros(Channel::Sms))->toBe(10_500);
 
     $this->configure(['channels.sms.rate_per_second' => 10, 'rate_limit.safety_margin' => 0.0]);
     expect(resolve(ChannelRateLimiter::class)->intervalMicros(Channel::Sms))->toBe(100_000);

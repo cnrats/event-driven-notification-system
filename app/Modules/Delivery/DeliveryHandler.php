@@ -12,6 +12,7 @@ use App\Modules\Delivery\Provider\ProviderResult;
 use App\Modules\Delivery\RateLimiting\ChannelRateLimiter;
 use App\Modules\Delivery\Retry\RetryPolicy;
 use App\Modules\Notifications\Application\NotificationLifecycle;
+use App\Modules\Notifications\Domain\Channel;
 use App\Modules\Notifications\Domain\NotificationStatus;
 use App\Modules\Notifications\Models\DeliveryAttempt;
 use App\Modules\Notifications\Models\Notification;
@@ -31,17 +32,23 @@ use Throwable;
  *
  *   1. Skip jobs whose row is already final, not due, or held by a live lease.
  *   2. Ask the circuit breaker. Open: put the job back, no attempt spent.
- *   3. Take a rate-limit slot and wait for it in-process.
- *   4. Claim the row (conditional UPDATE). Exactly one worker wins.
+ *   3. Claim the row (conditional UPDATE). Exactly one worker wins; a
+ *      notification cancelled in the meantime is not claimable.
+ *   4. Take a rate-limit slot and wait for it in-process (a worker that
+ *      wakes up late takes a fresh slot). If the channel is paused instead,
+ *      the claim is undone and the attempt given back.
  *   5. Call the provider with the notification ID as idempotency key.
  *   6. Record the attempt and move the row to sent / retrying / failed.
  *
- * Steps 2 and 3 come before the claim so that waiting never consumes a
- * delivery attempt. The claim comes last before the send so that a cancel
- * issued while the job was waiting still wins.
+ * Waiting (steps 2 and 4) never consumes a delivery attempt, and the wait
+ * for the slot is the last thing before the request so the spacing the
+ * limiter hands out is the spacing the provider sees.
  */
 final readonly class DeliveryHandler
 {
+    /** How often a worker may take a new slot after waking up too late. */
+    private const int SLOT_TRIES = 3;
+
     public function __construct(
         private NotificationLifecycle $lifecycle,
         private NotificationProvider $provider,
@@ -90,26 +97,23 @@ final readonly class DeliveryHandler
             return DeliveryOutcome::release($circuit->retryAfterSeconds, 'circuit_open');
         }
 
-        $slot = $this->limiter->reserve($channel);
-
-        if (! $slot->granted) {
-            // The channel is paused (provider sent 429). Nothing was reserved.
-            $this->giveBackProbe($circuit->probe, $notification);
-            $this->metrics->released($channel, 'throttled');
-
-            return DeliveryOutcome::release((int) ceil($slot->waitSeconds()), 'throttled');
-        }
-
-        if ($slot->waitMicros > 0) {
-            Sleep::usleep($slot->waitMicros);
-        }
-        $this->metrics->rateLimiterWait($channel, $slot->waitSeconds());
-
         if (! $this->lifecycle->claim($notification, DbTime::now(), $this->config->leaseSeconds)) {
-            // Cancelled, or another worker claimed it, while this job waited.
+            // Cancelled, or claimed by another worker, since the job was pushed.
             $this->giveBackProbe($circuit->probe, $notification);
 
             return DeliveryOutcome::done('not_claimable');
+        }
+
+        $pausedFor = $this->waitForSlot($channel);
+
+        if ($pausedFor !== null) {
+            // The channel is paused (provider sent 429). No slot was taken;
+            // hand the row back as if it had never been claimed.
+            $this->lifecycle->unclaim($notification);
+            $this->giveBackProbe($circuit->probe, $notification);
+            $this->metrics->released($channel, 'throttled');
+
+            return DeliveryOutcome::release($pausedFor, 'throttled');
         }
 
         $result = $this->provider->send(new OutboundMessage(
@@ -126,6 +130,51 @@ final readonly class DeliveryHandler
         $this->apply($notification, $result);
 
         return DeliveryOutcome::done($result->outcome->value);
+    }
+
+    /**
+     * Take a rate-limit slot and wait for it, as the very last step before
+     * the request, so nothing with variable duration (a database write) sits
+     * between the slot and the moment the provider sees the message.
+     *
+     * The limiter spaces the slots; the sender has to hit them. A worker that
+     * wakes up noticeably late (CPU contention, garbage collection) would
+     * send its message bunched together with the ones behind it, and enough
+     * of that pushes a one-second window over the limit at the provider. So
+     * a late worker gives its slot up and takes a fresh one.
+     *
+     * @return int|null null once a slot was taken and waited for; otherwise the
+     *                  seconds until the paused channel hands out slots again
+     */
+    private function waitForSlot(Channel $channel): ?int
+    {
+        $toleranceNanos = $this->config->rateMaxLatenessMs * 1_000_000;
+        $waited = 0.0;
+
+        for ($try = 1; $try <= self::SLOT_TRIES; $try++) {
+            $slot = $this->limiter->reserve($channel);
+
+            if (! $slot->granted) {
+                return (int) ceil($slot->waitSeconds());
+            }
+
+            $dueAt = hrtime(true) + $slot->waitMicros * 1000;
+
+            if ($slot->waitMicros > 0) {
+                Sleep::usleep($slot->waitMicros);
+            }
+            $waited += $slot->waitSeconds();
+
+            if (hrtime(true) - $dueAt <= $toleranceNanos) {
+                break;
+            }
+
+            $this->metrics->slotMissed($channel);
+        }
+
+        $this->metrics->rateLimiterWait($channel, $waited);
+
+        return null;
     }
 
     /**

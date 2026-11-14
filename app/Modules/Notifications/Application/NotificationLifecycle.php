@@ -63,6 +63,33 @@ final readonly class NotificationLifecycle
         return $claimed;
     }
 
+    /**
+     * processing → queued without having called the provider: the worker
+     * claimed the row and then learned that the channel is paused. The
+     * attempt taken by the claim is given back.
+     */
+    public function unclaim(Notification $notification): bool
+    {
+        $released = Notification::query()
+            ->whereKey($notification->id)
+            ->where('status', NotificationStatus::Processing->value)
+            ->update([
+                'status' => NotificationStatus::Queued->value,
+                'attempts' => DB::raw('GREATEST(attempts, 1) - 1'),
+                'locked_until' => null,
+            ]) === 1;
+
+        if ($released) {
+            $this->remember($notification, [
+                'status' => NotificationStatus::Queued,
+                'attempts' => max(0, $notification->attempts - 1),
+                'locked_until' => null,
+            ]);
+        }
+
+        return $released;
+    }
+
     public function markSent(Notification $notification, ?string $providerMessageId, CarbonImmutable $now): bool
     {
         $changes = [

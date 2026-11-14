@@ -42,10 +42,14 @@ return [
         // Slots are spaced slightly wider than 1/rate so that network jitter
         // between the worker and the provider cannot push a one-second window
         // over the limit as measured at the provider.
-        'safety_margin' => (float) env('RATE_LIMIT_SAFETY_MARGIN', 0.03),
+        'safety_margin' => (float) env('RATE_LIMIT_SAFETY_MARGIN', 0.05),
         // A worker waits in-process for its slot up to this long; beyond it
         // (provider asked us to back off) the job is released instead.
         'max_block_ms' => (int) env('RATE_LIMIT_MAX_BLOCK_MS', 1500),
+        // A worker that wakes up later than this for its slot (CPU stall,
+        // garbage collection) gives the slot up and takes a fresh one: a
+        // late message would arrive bunched with the ones behind it.
+        'max_lateness_ms' => (int) env('RATE_LIMIT_MAX_LATENESS_MS', 10),
     ],
 
     'delivery' => [

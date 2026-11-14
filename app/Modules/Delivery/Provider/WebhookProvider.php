@@ -6,9 +6,12 @@ namespace App\Modules\Delivery\Provider;
 
 use App\Support\NotificationsConfig;
 use Carbon\CarbonImmutable;
+use GuzzleHttp\Promise\PromiseInterface;
+use GuzzleHttp\Utils;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Factory;
 use Illuminate\Http\Client\Response;
+use Psr\Http\Message\RequestInterface;
 use Throwable;
 
 /**
@@ -19,11 +22,21 @@ use Throwable;
  *
  * Works against the bundled mock and against a webhook.site URL.
  */
-final readonly class WebhookProvider implements NotificationProvider
+final class WebhookProvider implements NotificationProvider
 {
+    /**
+     * One Guzzle handler per worker process. Its connection to the provider
+     * is kept alive and reused between jobs: a request then costs no TCP
+     * handshake, which is faster and, more importantly here, far more even,
+     * so messages reach the provider at the spacing the rate limiter set.
+     *
+     * @var (callable(RequestInterface, array<string, mixed>): PromiseInterface)|null
+     */
+    private static $handler;
+
     public function __construct(
-        private Factory $http,
-        private NotificationsConfig $config,
+        private readonly Factory $http,
+        private readonly NotificationsConfig $config,
     ) {}
 
     public function send(OutboundMessage $message): ProviderResult
@@ -43,6 +56,7 @@ final readonly class WebhookProvider implements NotificationProvider
             $response = $this->http
                 ->connectTimeout($this->config->providerConnectTimeoutSeconds)
                 ->timeout($this->config->providerTimeoutSeconds)
+                ->setHandler(self::$handler ??= Utils::chooseHandler())
                 ->withHeaders($headers)
                 ->acceptJson()
                 ->asJson()

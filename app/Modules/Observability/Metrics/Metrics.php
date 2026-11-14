@@ -95,6 +95,16 @@ final class Metrics
     }
 
     /**
+     * A worker woke up too late for its rate-limit slot and took a new one.
+     */
+    public function slotMissed(Channel $channel): void
+    {
+        $this->safely(fn (CollectorRegistry $registry) => $registry
+            ->getOrRegisterCounter(self::NAMESPACE, 'rate_limiter_slots_missed_total', 'Slots given up because the worker woke up too late.', ['channel'])
+            ->inc([$channel->value]));
+    }
+
+    /**
      * A job was put back without a delivery attempt: circuit_open | throttled | lease_held.
      */
     public function released(Channel $channel, string $reason): void
