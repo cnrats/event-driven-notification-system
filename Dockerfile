@@ -31,5 +31,9 @@ COPY docker/php.ini /usr/local/etc/php/conf.d/zz-app.ini
 COPY docker/entrypoint.sh /usr/local/bin/app-entrypoint
 RUN chmod +x /usr/local/bin/app-entrypoint
 
+# The base image's health check probes the Caddy admin API, which only the
+# API role runs. Each service defines its own check in docker-compose.yml.
+HEALTHCHECK NONE
+
 ENTRYPOINT ["app-entrypoint"]
 CMD ["frankenphp", "run", "--config", "/etc/frankenphp/Caddyfile"]

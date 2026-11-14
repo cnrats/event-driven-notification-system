@@ -47,6 +47,12 @@ services:
     volumes:
       # `make demo` runs the scenarios here and writes its measurements out.
       - ./docs/results:/app/docs/results
+    healthcheck:
+      test: ["CMD", "php", "artisan", "horizon:status"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 10s
     # Horizon drains in-flight jobs on SIGTERM; give it longer than the job timeout.
     stop_signal: SIGTERM
     stop_grace_period: 40s
@@ -77,6 +83,11 @@ services:
     command: ["frankenphp", "php-server", "--root", "/app/mock-provider", "--listen", ":9000"]
     ports:
       - "9000:9000"
+    healthcheck:
+      test: ["CMD", "php", "-r", "exit(@file_get_contents('http://127.0.0.1:9000/__admin/health') === false ? 1 : 0);"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
     depends_on:
       redis:
         condition: service_healthy
