@@ -126,6 +126,17 @@ services:
     depends_on:
       - prometheus
 
+  # API documentation at http://localhost:8081
+  swagger-ui:
+    image: swaggerapi/swagger-ui:v5.18.2
+    restart: unless-stopped
+    environment:
+      SWAGGER_JSON: /spec/openapi.yaml
+    volumes:
+      - ./docs/openapi.yaml:/spec/openapi.yaml:ro
+    ports:
+      - "8081:8080"
+
 volumes:
   mysql-data:
   redis-data:
