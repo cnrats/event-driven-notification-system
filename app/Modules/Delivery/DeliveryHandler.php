@@ -17,11 +17,14 @@ use App\Modules\Notifications\Domain\NotificationStatus;
 use App\Modules\Notifications\Models\DeliveryAttempt;
 use App\Modules\Notifications\Models\Notification;
 use App\Modules\Observability\Metrics\Metrics;
+use App\Modules\Observability\Tracing\Tracing;
 use App\Support\DbTime;
 use App\Support\NotificationsConfig;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Context;
 use Illuminate\Support\Sleep;
+use OpenTelemetry\API\Trace\SpanInterface;
+use OpenTelemetry\API\Trace\SpanKind;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -57,6 +60,7 @@ final readonly class DeliveryHandler
         private RetryPolicy $retryPolicy,
         private NotificationsConfig $config,
         private Metrics $metrics,
+        private Tracing $tracing,
         private LoggerInterface $log,
     ) {}
 
@@ -75,6 +79,34 @@ final readonly class DeliveryHandler
             Context::add('correlation_id', $notification->correlation_id);
         }
 
+        // The trace of the request that created the notification continues
+        // here, in another process and possibly much later.
+        if ($notification->trace_context === null) {
+            return $this->process($notification);
+        }
+
+        return $this->tracing->span(
+            'notification.deliver',
+            [
+                'notification.id' => $notification->id,
+                'notification.channel' => $notification->channel->value,
+                'notification.priority' => $notification->priority->value,
+                'notification.attempt' => $notification->attempts + 1,
+                'correlation_id' => $notification->correlation_id,
+            ],
+            function (SpanInterface $span) use ($notification): DeliveryOutcome {
+                $outcome = $this->process($notification);
+                $span->setAttribute('delivery.outcome', $outcome->reason);
+
+                return $outcome;
+            },
+            SpanKind::KIND_CONSUMER,
+            $notification->trace_context,
+        );
+    }
+
+    private function process(Notification $notification): DeliveryOutcome
+    {
         $now = DbTime::now();
         $skip = $this->reasonToSkip($notification, $now);
 
@@ -104,7 +136,11 @@ final readonly class DeliveryHandler
             return DeliveryOutcome::done('not_claimable');
         }
 
-        $pausedFor = $this->waitForSlot($channel);
+        $pausedFor = $this->tracing->childSpan(
+            'rate_limit.wait',
+            ['notification.channel' => $channel->value],
+            fn (): ?int => $this->waitForSlot($channel),
+        );
 
         if ($pausedFor !== null) {
             // The channel is paused (provider sent 429). No slot was taken;
@@ -116,14 +152,28 @@ final readonly class DeliveryHandler
             return DeliveryOutcome::release($pausedFor, 'throttled');
         }
 
-        $result = $this->provider->send(new OutboundMessage(
-            notificationId: $notification->id,
-            channel: $channel,
-            recipient: $notification->recipient,
-            content: $notification->content,
-            correlationId: $notification->correlation_id,
-            traceContext: $notification->trace_context,
-        ));
+        $result = $this->tracing->childSpan(
+            'provider.send',
+            ['notification.id' => $notification->id, 'notification.channel' => $channel->value],
+            function (SpanInterface $span) use ($notification, $channel): ProviderResult {
+                $result = $this->provider->send(new OutboundMessage(
+                    notificationId: $notification->id,
+                    channel: $channel,
+                    recipient: $notification->recipient,
+                    content: $notification->content,
+                    correlationId: $notification->correlation_id,
+                    // Sent as the traceparent header, so a provider that
+                    // traces can attach its spans to ours.
+                    traceContext: $this->tracing->traceparent(),
+                ));
+
+                $span->setAttribute('provider.outcome', $result->outcome->value);
+                $span->setAttribute('http.response.status_code', $result->httpStatus);
+
+                return $result;
+            },
+            SpanKind::KIND_CLIENT,
+        );
 
         $this->record($notification, $result);
         $this->updateCircuit($notification, $result, $circuit->probe);

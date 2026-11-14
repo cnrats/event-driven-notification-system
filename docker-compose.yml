@@ -19,6 +19,7 @@ services:
     <<: *php
     environment:
       RUN_MIGRATIONS: "1"
+      OTEL_SERVICE_NAME: notification-api
     ports:
       - "8080:8000"
     depends_on:
@@ -41,6 +42,7 @@ services:
       # Pool sizes can be overridden from the shell, e.g. `make demo-scale`.
       WORKERS_PER_CHANNEL: ${WORKERS_PER_CHANNEL:-4}
       FAIR_WORKERS_PER_CHANNEL: ${FAIR_WORKERS_PER_CHANNEL:-1}
+      OTEL_SERVICE_NAME: notification-worker
     depends_on: *after-migrations
     volumes:
       # `make demo` runs the scenarios here and writes its measurements out.
@@ -136,6 +138,15 @@ services:
       - "3000:3000"
     depends_on:
       - prometheus
+
+  # Traces at http://localhost:16686 (OTLP in, in-memory storage).
+  jaeger:
+    image: jaegertracing/all-in-one:1.64.0
+    restart: unless-stopped
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+    ports:
+      - "16686:16686"
 
   # API documentation at http://localhost:8081
   swagger-ui:

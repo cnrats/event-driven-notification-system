@@ -6,6 +6,7 @@ use App\Modules\Notifications\Application\Exceptions\IdempotencyConflict;
 use App\Modules\Notifications\Application\Exceptions\InvalidNotification;
 use App\Modules\Observability\Http\Middleware\AssignCorrelationId;
 use App\Modules\Observability\Http\Middleware\ForceJsonResponse;
+use App\Modules\Observability\Http\Middleware\TraceRequest;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -24,6 +25,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->api(prepend: [
             ForceJsonResponse::class,
             AssignCorrelationId::class,
+            TraceRequest::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

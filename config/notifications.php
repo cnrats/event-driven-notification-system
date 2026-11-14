@@ -102,6 +102,17 @@ return [
         'public_port' => (int) env('REVERB_PUBLIC_PORT', 8085),
     ],
 
+    'tracing' => [
+        'enabled' => (bool) env('TRACING_ENABLED', false),
+        // OTLP over HTTP; Jaeger accepts it natively.
+        'endpoint' => (string) env('OTEL_EXPORTER_OTLP_ENDPOINT', 'http://jaeger:4318'),
+        'service_name' => (string) env('OTEL_SERVICE_NAME', 'notification-system'),
+        // A batch of 1000 would otherwise become one trace with thousands
+        // of spans: only its first few notifications carry the trace on
+        // into delivery.
+        'traced_per_batch' => (int) env('TRACING_PER_BATCH', 10),
+    ],
+
     // Demo scenarios (`make demo`) call the public API over HTTP.
     'scenarios' => [
         'api_url' => (string) env('SCENARIO_API_URL', 'http://app:8000'),

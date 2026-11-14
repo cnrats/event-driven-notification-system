@@ -45,6 +45,7 @@ final readonly class NotificationsConfig
         public int $workersPerChannel,
         public int $fairWorkersPerChannel,
         public int $metricsRedisDatabase,
+        public int $tracedPerBatch,
     ) {}
 
     public static function fromRepository(Repository $config): self
@@ -84,6 +85,7 @@ final readonly class NotificationsConfig
             workersPerChannel: $config->integer('notifications.workers.per_channel'),
             fairWorkersPerChannel: $config->integer('notifications.workers.fair_per_channel'),
             metricsRedisDatabase: $config->integer('notifications.metrics.redis_database'),
+            tracedPerBatch: $config->integer('notifications.tracing.traced_per_batch'),
         );
     }
 

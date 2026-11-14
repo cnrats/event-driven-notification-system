@@ -160,7 +160,11 @@ final readonly class CreateNotifications
 
             $id = (string) Str::uuid7();
             $status = $draft->scheduledAt instanceof CarbonImmutable ? NotificationStatus::Scheduled : NotificationStatus::Queued;
-            $rows[] = $this->row($id, $draft, $batchId, $index, $now, $meta);
+            // Only the first few notifications of a batch continue the trace
+            // into delivery; a thousand-item batch must not become one
+            // trace with thousands of spans.
+            $rowMeta = count($rows) < $this->config->tracedPerBatch ? $meta : new RequestMeta($meta->correlationId);
+            $rows[] = $this->row($id, $draft, $batchId, $index, $now, $rowMeta);
             $entries[] = ['index' => $index, 'id' => $id, 'status' => $status->value, 'duplicate' => false];
             $created[] = $draft;
 
