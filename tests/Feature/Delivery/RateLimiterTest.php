@@ -55,9 +55,13 @@ it('spaces slots evenly instead of allowing a burst at the window edge', functio
     $interval = $this->limiter->intervalMicros(Channel::Sms);
 
     foreach (range(1, 49) as $i) {
-        // Each reservation waits roughly one interval longer than the previous one.
-        expect($waits[$i] - $waits[$i - 1])->toBeGreaterThan($interval * 0.5)->toBeLessThanOrEqual($interval);
+        // Each reservation waits longer than the one before, by at most one
+        // interval (less by however long the previous call took).
+        expect($waits[$i] - $waits[$i - 1])->toBeGreaterThan(0)->toBeLessThanOrEqual($interval);
     }
+
+    // 50 slots span 49 intervals, give or take the time the calls took.
+    expect($waits[49])->toBeGreaterThan($interval * 40)->toBeLessThanOrEqual($interval * 49);
 });
 
 it('applies the safety margin to the slot interval', function (): void {
