@@ -51,7 +51,6 @@ final class ScenariosServiceProvider extends ServiceProvider
                 new Idempotency,
                 new Schedule,
             ],
-            $app->make(ScenarioKit::class),
             $app->basePath('docs/results'),
         ));
     }

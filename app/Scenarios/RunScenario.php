@@ -24,13 +24,17 @@ final class RunScenario extends Command
      */
     public function __construct(
         private readonly array $scenarios,
-        private readonly ScenarioKit $kit,
         private readonly string $resultsPath,
     ) {
         parent::__construct();
     }
 
-    public function handle(): int
+    /**
+     * The kit is injected here, not into the constructor: Artisan builds
+     * every command on start, and the kit opens a Redis connection. Listing
+     * commands or building the image must not need Redis.
+     */
+    public function handle(ScenarioKit $kit): int
     {
         if ($this->option('list') === true) {
             $this->table(['Name', 'What happens'], array_map(
@@ -62,7 +66,7 @@ final class RunScenario extends Command
             $startedAt = microtime(true);
 
             try {
-                $report = $scenario->run($this->kit);
+                $report = $scenario->run($kit);
             } catch (Throwable $e) {
                 $report = (new Report($scenario->name(), $scenario->title()))
                     ->check('The scenario ran to completion', 'no error', $e->getMessage(), false);
@@ -77,7 +81,7 @@ final class RunScenario extends Command
         }
 
         // Leave the stack clean and the provider well-behaved.
-        $this->kit->reset();
+        $kit->reset();
 
         $this->newLine();
         $allPassed ? $this->info('All checks passed.') : $this->error('Some checks failed.');

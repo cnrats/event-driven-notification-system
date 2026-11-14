@@ -74,3 +74,18 @@ jobs:
 
       - name: Run the test suite
         run: php artisan test
+
+  image:
+    name: Docker image builds
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # The image is built without any environment and without Redis or
+      # MySQL. This catches code that needs a live service just to boot.
+      - name: Build the application image
+        run: docker compose build app
+
+      - name: Compose file is valid
+        run: docker compose config --quiet
+
