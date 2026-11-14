@@ -23,8 +23,8 @@ being delivered while there is always something more important.
 
 - A paused or failing channel only stops its own workers.
 - High priority is not delayed by a low-priority backlog: in the burst
-  scenario the median time to delivery is about 1 s for high, 10 s for normal
-  and 25 s for low priority.
+  scenario the median time to delivery is under 1 s for high, about 9 s for
+  normal and about 23 s for low priority.
 - Low priority always has at least one worker, so it keeps moving during a
   long high-priority backlog. The share is the ratio of the two pools and can
   be set to zero for strict priority.

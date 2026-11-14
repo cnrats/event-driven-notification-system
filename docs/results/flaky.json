@@ -1,0 +1,77 @@
+{
+    "scenario": "flaky",
+    "title": "The provider fails 30 % of requests",
+    "passed": true,
+    "checks": [
+        {
+            "claim": "Every notification reached a final state",
+            "expected": "900",
+            "measured": "900",
+            "passed": true
+        },
+        {
+            "claim": "Share delivered thanks to retries",
+            "expected": "at least 0.98",
+            "measured": "0.9956",
+            "passed": true
+        },
+        {
+            "claim": "The provider delivered each sent notification exactly once",
+            "expected": "896",
+            "measured": "896",
+            "passed": true
+        },
+        {
+            "claim": "Most delivery attempts used by any notification",
+            "expected": "at most 5",
+            "measured": "5",
+            "passed": true
+        },
+        {
+            "claim": "Every failure is explained on the notification (\"gave up after 5 attempts\")",
+            "expected": "4",
+            "measured": "4",
+            "passed": true
+        },
+        {
+            "claim": "The queue gave up on no job",
+            "expected": "0",
+            "measured": "0",
+            "passed": true
+        },
+        {
+            "claim": "Most sms requests in any one second, retries included",
+            "expected": "at most 100",
+            "measured": "96",
+            "passed": true
+        },
+        {
+            "claim": "Most email requests in any one second, retries included",
+            "expected": "at most 100",
+            "measured": "96",
+            "passed": true
+        },
+        {
+            "claim": "Most push requests in any one second, retries included",
+            "expected": "at most 100",
+            "measured": "96",
+            "passed": true
+        }
+    ],
+    "facts": {
+        "notifications": 900,
+        "provider_failure_rate": 0.3,
+        "delivered": 896,
+        "failed_after_all_attempts": 4,
+        "notifications_by_attempts_needed": {
+            "1": 648,
+            "2": 170,
+            "3": 51,
+            "4": 17,
+            "5": 14
+        },
+        "requests_the_provider_failed": 383,
+        "scenario_seconds": 78.1,
+        "measured_at": "2026-11-14T01:12:30Z"
+    }
+}

@@ -1,0 +1,43 @@
+{
+    "scenario": "crash",
+    "title": "Workers are killed while their request is in flight",
+    "passed": true,
+    "checks": [
+        {
+            "claim": "Worker processes killed mid-request",
+            "expected": "at least 1",
+            "measured": "5",
+            "passed": true
+        },
+        {
+            "claim": "No notification was lost: all ended as sent",
+            "expected": "10",
+            "measured": "10",
+            "passed": true
+        },
+        {
+            "claim": "Recipients got each message exactly once (unique deliveries at the provider)",
+            "expected": "10",
+            "measured": "10",
+            "passed": true
+        },
+        {
+            "claim": "Messages resent after the crash and recognised by their idempotency key",
+            "expected": "at least 1",
+            "measured": "5",
+            "passed": true
+        }
+    ],
+    "facts": {
+        "notifications": 10,
+        "workers_killed": 5,
+        "seconds_until_everything_was_delivered": 35.3,
+        "lease_seconds": 30,
+        "notifications_by_attempts_needed": {
+            "1": 5,
+            "2": 5
+        },
+        "scenario_seconds": 35.7,
+        "measured_at": "2026-11-14T01:14:20Z"
+    }
+}

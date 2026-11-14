@@ -1,0 +1,32 @@
+{
+    "scenario": "cancel",
+    "title": "A batch is cancelled while it is being delivered",
+    "passed": true,
+    "checks": [
+        {
+            "claim": "Notifications cancelled before they were sent",
+            "expected": "at least 1",
+            "measured": "829",
+            "passed": true
+        },
+        {
+            "claim": "Sent plus cancelled is everything",
+            "expected": "1000",
+            "measured": "1000",
+            "passed": true
+        },
+        {
+            "claim": "The provider received exactly the ones that were not cancelled",
+            "expected": "171",
+            "measured": "171",
+            "passed": true
+        }
+    ],
+    "facts": {
+        "notifications": 1000,
+        "sent_before_the_cancel_took_effect": 171,
+        "cancelled": 829,
+        "scenario_seconds": 5.5,
+        "measured_at": "2026-11-14T01:14:25Z"
+    }
+}

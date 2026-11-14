@@ -1,0 +1,43 @@
+{
+    "scenario": "outage",
+    "title": "The provider is down for twelve seconds",
+    "passed": true,
+    "checks": [
+        {
+            "claim": "Every notification was delivered once the provider was back",
+            "expected": "900",
+            "measured": "900",
+            "passed": true
+        },
+        {
+            "claim": "None failed",
+            "expected": "0",
+            "measured": "0",
+            "passed": true
+        },
+        {
+            "claim": "Requests sent into the outage before the circuit opened",
+            "expected": "at most 60",
+            "measured": "24",
+            "passed": true
+        },
+        {
+            "claim": "Most delivery attempts any notification needed",
+            "expected": "at most 3",
+            "measured": "2",
+            "passed": true
+        }
+    ],
+    "facts": {
+        "notifications": 900,
+        "seconds_down": 12,
+        "requests_sent_into_the_outage": 24,
+        "requests_a_sender_without_circuit_breaker_would_have_sent": 1200,
+        "notifications_by_attempts_needed": {
+            "1": 876,
+            "2": 24
+        },
+        "scenario_seconds": 25.8,
+        "measured_at": "2026-11-14T01:13:44Z"
+    }
+}

@@ -1,0 +1,39 @@
+{
+    "scenario": "throttle",
+    "title": "The provider answers 429 with Retry-After for six seconds",
+    "passed": true,
+    "checks": [
+        {
+            "claim": "Every notification was delivered",
+            "expected": "800",
+            "measured": "800",
+            "passed": true
+        },
+        {
+            "claim": "Being throttled cost no delivery attempt (all delivered on attempt 1)",
+            "expected": "800",
+            "measured": "800",
+            "passed": true
+        },
+        {
+            "claim": "Requests answered with 429 (the whole channel paused after the first ones)",
+            "expected": "at most 60",
+            "measured": "14",
+            "passed": true
+        },
+        {
+            "claim": "Most requests in any one second",
+            "expected": "at most 100",
+            "measured": "96",
+            "passed": true
+        }
+    ],
+    "facts": {
+        "notifications": 800,
+        "seconds_throttled": 6,
+        "requests_answered_429": 14,
+        "requests_a_naive_sender_would_have_wasted": 600,
+        "scenario_seconds": 15,
+        "measured_at": "2026-11-14T01:13:18Z"
+    }
+}

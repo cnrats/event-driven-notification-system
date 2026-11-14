@@ -1,0 +1,44 @@
+{
+    "scenario": "lost-response",
+    "title": "The provider accepts messages but 10 % of its responses are lost",
+    "passed": true,
+    "checks": [
+        {
+            "claim": "Every notification ended as sent",
+            "expected": "600",
+            "measured": "600",
+            "passed": true
+        },
+        {
+            "claim": "Recipients got each message exactly once (unique deliveries at the provider)",
+            "expected": "600",
+            "measured": "600",
+            "passed": true
+        },
+        {
+            "claim": "Messages that were sent again and recognised by their idempotency key",
+            "expected": "at least 1",
+            "measured": "63",
+            "passed": true
+        },
+        {
+            "claim": "The queue gave up on no job",
+            "expected": "0",
+            "measured": "0",
+            "passed": true
+        }
+    ],
+    "facts": {
+        "notifications": 600,
+        "responses_lost": 63,
+        "resends_not_delivered_twice": 63,
+        "notifications_by_attempts_needed": {
+            "1": 548,
+            "2": 45,
+            "3": 3,
+            "4": 4
+        },
+        "scenario_seconds": 33.5,
+        "measured_at": "2026-11-14T01:13:03Z"
+    }
+}

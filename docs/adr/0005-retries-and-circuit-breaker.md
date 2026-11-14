@@ -50,12 +50,12 @@ no separate dead-letter queue to keep in sync.
 
 Measured in `docs/results`:
 
-- 30 % random failures: 99.9 % delivered, the remainder marked failed with
-  the reason.
-- Six seconds of 429: 14 requests answered with 429 instead of about 600; all
-  notifications delivered on their first attempt.
-- Twelve seconds of outage: 24 requests sent into it instead of about 1,200;
-  no notification failed.
+- 30 % random failures: more than 99 % delivered, the remainder marked failed
+  with the reason (`flaky.json`).
+- Six seconds of 429: a few dozen requests answered with 429 instead of about
+  600; every notification delivered on its first attempt (`throttle.json`).
+- Twelve seconds of outage: a few dozen requests sent into it instead of
+  about 1,200; no notification failed (`outage.json`).
 
 Trade-offs:
 

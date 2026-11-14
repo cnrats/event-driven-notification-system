@@ -1,0 +1,48 @@
+{
+    "scenario": "idempotency",
+    "title": "The same request arrives 30 times at once",
+    "passed": true,
+    "checks": [
+        {
+            "claim": "Exactly one request created the notification (HTTP 201)",
+            "expected": "1",
+            "measured": "1",
+            "passed": true
+        },
+        {
+            "claim": "All others were answered as replays (HTTP 200)",
+            "expected": "29",
+            "measured": "29",
+            "passed": true
+        },
+        {
+            "claim": "All responses carry the same notification id",
+            "expected": "1",
+            "measured": "1",
+            "passed": true
+        },
+        {
+            "claim": "One notification exists",
+            "expected": "1",
+            "measured": "1",
+            "passed": true
+        },
+        {
+            "claim": "It was delivered once",
+            "expected": "1",
+            "measured": "1",
+            "passed": true
+        },
+        {
+            "claim": "And it ended as sent",
+            "expected": "1",
+            "measured": "1",
+            "passed": true
+        }
+    ],
+    "facts": {
+        "concurrent_requests": 30,
+        "scenario_seconds": 0.4,
+        "measured_at": "2026-11-14T01:14:26Z"
+    }
+}

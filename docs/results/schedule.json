@@ -1,0 +1,44 @@
+{
+    "scenario": "schedule",
+    "title": "200 notifications are scheduled for a moment in the future",
+    "passed": true,
+    "checks": [
+        {
+            "claim": "Before the scheduled time all were waiting",
+            "expected": "200",
+            "measured": "200",
+            "passed": true
+        },
+        {
+            "claim": "Before the scheduled time the provider had received nothing",
+            "expected": "0",
+            "measured": "0",
+            "passed": true
+        },
+        {
+            "claim": "All were delivered",
+            "expected": "200",
+            "measured": "200",
+            "passed": true
+        },
+        {
+            "claim": "None was sent before its scheduled time",
+            "expected": "0",
+            "measured": "0",
+            "passed": true
+        },
+        {
+            "claim": "Seconds after the scheduled time until delivery (95th percentile)",
+            "expected": "at most 5",
+            "measured": "2.99",
+            "passed": true
+        }
+    ],
+    "facts": {
+        "notifications": 200,
+        "scheduled_seconds_ahead": 6,
+        "p95_seconds_after_scheduled_time": 2.99,
+        "scenario_seconds": 9.3,
+        "measured_at": "2026-11-14T01:14:35Z"
+    }
+}
