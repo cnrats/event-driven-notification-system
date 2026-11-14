@@ -49,6 +49,18 @@ services:
     depends_on: *after-migrations
     stop_grace_period: 10s
 
+  # Stand-in for the external provider. Same contract as the brief
+  # (POST {to, channel, content} -> 202 {messageId, status, timestamp}),
+  # plus fault injection and arrival statistics for the scenarios.
+  mock-provider:
+    <<: *php
+    command: ["frankenphp", "php-server", "--root", "/app/mock-provider", "--listen", ":9000"]
+    ports:
+      - "9000:9000"
+    depends_on:
+      redis:
+        condition: service_healthy
+
   mysql:
     image: mysql:8.4
     restart: unless-stopped

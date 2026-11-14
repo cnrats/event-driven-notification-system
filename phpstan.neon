@@ -8,4 +8,5 @@ parameters:
         - config
         - database
         - routes
+        - mock-provider
     tmpDir: storage/framework/cache/phpstan

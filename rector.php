@@ -13,6 +13,8 @@ return RectorConfig::configure()
         __DIR__.'/routes',
         __DIR__.'/tests',
     ])
+    // mock-provider/ is left out on purpose: it is a standalone script without
+    // the framework, and the Laravel rules would rewrite it to use facades.
     ->withPhpSets(php84: true)
     ->withPreparedSets(
         deadCode: true,
