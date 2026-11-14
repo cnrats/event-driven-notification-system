@@ -1,0 +1,76 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  quality:
+    name: Lint and static analysis
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.4"
+          extensions: redis, pdo_mysql, pcntl, intl
+          coverage: none
+
+      - uses: ramsey/composer-install@v3
+
+      - name: Pint (code style)
+        run: vendor/bin/pint --test
+
+      - name: Larastan (level max)
+        run: vendor/bin/phpstan analyse --memory-limit=1G --no-progress
+
+      - name: Rector (dry run)
+        run: vendor/bin/rector process --dry-run --no-progress-bar
+
+  tests:
+    name: Tests (MySQL 8.4, Redis 7)
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_DATABASE: notifications_test
+          MYSQL_USER: notifications
+          MYSQL_PASSWORD: notifications
+          MYSQL_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -unotifications -pnotifications --silent"
+          --health-interval=5s --health-timeout=3s --health-retries=20
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=5s --health-timeout=3s --health-retries=20
+    env:
+      APP_KEY: base64:d+txYBVD97gIHQTEBfPOK0QBakc7YnvhDcJ8jkNOVwM=
+      DB_CONNECTION: mysql
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DB_USERNAME: notifications
+      DB_PASSWORD: notifications
+      REDIS_CLIENT: phpredis
+      REDIS_HOST: 127.0.0.1
+      REDIS_PORT: 6379
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.4"
+          extensions: redis, pdo_mysql, pcntl, intl
+          coverage: none
+
+      - uses: ramsey/composer-install@v3
+
+      - name: Run the test suite
+        run: php artisan test

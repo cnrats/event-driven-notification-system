@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
+         bootstrap="vendor/autoload.php"
+         colors="true"
+>
+    <testsuites>
+        <testsuite name="Unit">
+            <directory>tests/Unit</directory>
+        </testsuite>
+        <testsuite name="Feature">
+            <directory>tests/Feature</directory>
+        </testsuite>
+        <testsuite name="Architecture">
+            <directory>tests/Architecture</directory>
+        </testsuite>
+    </testsuites>
+    <source>
+        <include>
+            <directory>app</directory>
+        </include>
+    </source>
+    <php>
+        <!-- The suite runs against real MySQL and Redis: the guarantees under
+             test (guarded updates, SKIP LOCKED, Lua scripts) cannot be faked. -->
+        <env name="APP_ENV" value="testing" force="true"/>
+        <env name="APP_DEBUG" value="true" force="true"/>
+        <env name="DB_DATABASE" value="notifications_test" force="true"/>
+        <env name="REDIS_DB" value="14" force="true"/>
+        <env name="REDIS_CACHE_DB" value="15" force="true"/>
+        <env name="METRICS_REDIS_DB" value="13" force="true"/>
+        <env name="CACHE_STORE" value="redis" force="true"/>
+        <env name="QUEUE_CONNECTION" value="redis" force="true"/>
+        <env name="BROADCAST_CONNECTION" value="null" force="true"/>
+        <env name="LOG_CHANNEL" value="null" force="true"/>
+        <env name="NOTIFICATION_PROVIDER_URL" value="http://provider.test/send" force="true"/>
+        <env name="TRACING_ENABLED" value="false" force="true"/>
+        <!-- Each value is set as both env and server variable: inside Docker
+             the same names already exist in the real environment, and Laravel
+             reads $_SERVER before $_ENV. -->
+        <server name="APP_ENV" value="testing" force="true"/>
+        <server name="APP_DEBUG" value="true" force="true"/>
+        <server name="DB_DATABASE" value="notifications_test" force="true"/>
+        <server name="REDIS_DB" value="14" force="true"/>
+        <server name="REDIS_CACHE_DB" value="15" force="true"/>
+        <server name="METRICS_REDIS_DB" value="13" force="true"/>
+        <server name="CACHE_STORE" value="redis" force="true"/>
+        <server name="QUEUE_CONNECTION" value="redis" force="true"/>
+        <server name="BROADCAST_CONNECTION" value="null" force="true"/>
+        <server name="LOG_CHANNEL" value="null" force="true"/>
+        <server name="NOTIFICATION_PROVIDER_URL" value="http://provider.test/send" force="true"/>
+        <server name="TRACING_ENABLED" value="false" force="true"/>
+    </php>
+</phpunit>

@@ -1,0 +1,9 @@
+# Development override: mount the working tree so code changes apply without
+# rebuilding the image. Used by `make dev`; reviewers do not need it.
+x-src: &src
+  volumes:
+    - .:/app
+
+services:
+  app:
+    <<: *src

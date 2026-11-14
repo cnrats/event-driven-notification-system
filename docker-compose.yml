@@ -1,0 +1,62 @@
+name: notification-system
+
+# Every PHP role runs the same image; only the command differs.
+x-php: &php
+  build:
+    context: .
+    target: app
+  image: notification-system:local
+  env_file: docker/app.env
+  restart: unless-stopped
+
+services:
+  # REST API. Applies migrations on start, so no manual step is needed.
+  app:
+    <<: *php
+    environment:
+      RUN_MIGRATIONS: "1"
+    ports:
+      - "8080:8000"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "php", "-r", "exit(@file_get_contents('http://127.0.0.1:8000/up') === false ? 1 : 0);"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
+
+  mysql:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: notifications
+      MYSQL_USER: notifications
+      MYSQL_PASSWORD: notifications
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./docker/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -unotifications -pnotifications --silent"]
+      interval: 3s
+      timeout: 3s
+      retries: 40
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  mysql-data:
+  redis-data:
