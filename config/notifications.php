@@ -95,6 +95,13 @@ return [
         'redis_database' => (int) env('METRICS_REDIS_DB', 2),
     ],
 
+    'realtime' => [
+        // Broadcast every status change over WebSocket (Laravel Reverb).
+        'enabled' => (bool) env('REALTIME_ENABLED', true),
+        // Port on which a browser reaches the Reverb container.
+        'public_port' => (int) env('REVERB_PUBLIC_PORT', 8085),
+    ],
+
     // Demo scenarios (`make demo`) call the public API over HTTP.
     'scenarios' => [
         'api_url' => (string) env('SCENARIO_API_URL', 'http://app:8000'),

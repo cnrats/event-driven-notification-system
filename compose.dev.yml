@@ -13,3 +13,5 @@ services:
     <<: *src
   mock-provider:
     <<: *src
+  reverb:
+    <<: *src

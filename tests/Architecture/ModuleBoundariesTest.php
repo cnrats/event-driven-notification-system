@@ -12,9 +12,13 @@ arch('the domain is plain PHP: no framework, no other layer')
     ->expect('App\Modules\Notifications\Domain')
     ->toUseNothing();
 
-arch('accepting notifications does not know how they are delivered')
+arch('accepting notifications does not know how they are delivered or announced')
     ->expect('App\Modules\Notifications')
-    ->not->toUse(['App\Modules\Delivery', 'App\Modules\Templates']);
+    ->not->toUse(['App\Modules\Delivery', 'App\Modules\Templates', 'App\Modules\Realtime']);
+
+arch('real-time updates only listen to events; nothing depends on them')
+    ->expect('App\Modules\Realtime')
+    ->not->toBeUsedIn(['App\Modules\Notifications', 'App\Modules\Delivery', 'App\Modules\Templates', 'App\Modules\Observability']);
 
 arch('templates depend only on the contract they implement')
     ->expect('App\Modules\Templates')

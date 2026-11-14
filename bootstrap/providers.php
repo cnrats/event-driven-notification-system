@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Modules\Delivery\DeliveryServiceProvider;
 use App\Modules\Notifications\NotificationsServiceProvider;
 use App\Modules\Observability\ObservabilityServiceProvider;
+use App\Modules\Realtime\RealtimeServiceProvider;
 use App\Modules\Templates\TemplatesServiceProvider;
 use App\Providers\AppServiceProvider;
 use App\Providers\HorizonServiceProvider;
@@ -17,5 +18,6 @@ return [
     NotificationsServiceProvider::class,
     TemplatesServiceProvider::class,
     DeliveryServiceProvider::class,
+    RealtimeServiceProvider::class,
     ScenariosServiceProvider::class,
 ];

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Modules\Delivery\Queue\QueueRouter;
 use App\Modules\Notifications\Domain\Channel;
+use App\Modules\Realtime\Events\NotificationStatusBroadcast;
 use Illuminate\Support\Str;
 
 /*
@@ -62,6 +63,14 @@ foreach (Channel::cases() as $channel) {
         ];
     }
 }
+
+// Publishing status changes to the WebSocket server has its own small pool,
+// so real-time updates never compete with delivery for a worker.
+$supervisors['realtime'] = $worker + [
+    'queue' => [NotificationStatusBroadcast::QUEUE],
+    'minProcesses' => 2,
+    'maxProcesses' => 2,
+];
 
 return [
 

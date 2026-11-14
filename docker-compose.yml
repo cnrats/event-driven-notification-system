@@ -56,6 +56,17 @@ services:
     depends_on: *after-migrations
     stop_grace_period: 10s
 
+  # WebSocket server for real-time status updates; watch it on
+  # http://localhost:8080/live
+  reverb:
+    <<: *php
+    command: ["php", "artisan", "reverb:start", "--host=0.0.0.0", "--port=8080"]
+    ports:
+      - "8085:8080"
+    depends_on:
+      redis:
+        condition: service_healthy
+
   # Stand-in for the external provider. Same contract as the brief
   # (POST {to, channel, content} -> 202 {messageId, status, timestamp}),
   # plus fault injection and arrival statistics for the scenarios.
