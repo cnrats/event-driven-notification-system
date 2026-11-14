@@ -7,3 +7,7 @@ x-src: &src
 services:
   app:
     <<: *src
+  horizon:
+    <<: *src
+  sweeper:
+    <<: *src

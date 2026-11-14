@@ -9,6 +9,10 @@ x-php: &php
   env_file: docker/app.env
   restart: unless-stopped
 
+x-after-migrations: &after-migrations
+  app:
+    condition: service_healthy
+
 services:
   # REST API. Applies migrations on start, so no manual step is needed.
   app:
@@ -28,6 +32,22 @@ services:
       timeout: 3s
       retries: 20
       start_period: 10s
+
+  # Queue workers: one strict-priority pool and one fairness pool per channel.
+  horizon:
+    <<: *php
+    command: ["php", "artisan", "horizon"]
+    depends_on: *after-migrations
+    # Horizon drains in-flight jobs on SIGTERM; give it longer than the job timeout.
+    stop_signal: SIGTERM
+    stop_grace_period: 40s
+
+  # Promotes due (scheduled / retrying) notifications and recovers stranded ones.
+  sweeper:
+    <<: *php
+    command: ["php", "artisan", "notifications:sweep"]
+    depends_on: *after-migrations
+    stop_grace_period: 10s
 
   mysql:
     image: mysql:8.4
