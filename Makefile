@@ -2,7 +2,7 @@ COMPOSE     = docker compose
 COMPOSE_DEV = docker compose -f docker-compose.yml -f compose.dev.yml
 RUN         = $(COMPOSE) run --rm --no-deps -e RUN_MIGRATIONS=0 app
 
-.PHONY: help up down dev logs shell test lint fix demo scenario
+.PHONY: help up down dev logs shell test lint fix demo demo-scale scenario
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-10s\033[0m %s\n", $$1, $$2}'
@@ -32,8 +32,14 @@ lint: ## Pint, Larastan and Rector (dry run)
 fix: ## Apply Pint and Rector fixes
 	$(RUN) sh -c "vendor/bin/rector process && vendor/bin/pint"
 
-scenario: ## Run one scenario, e.g. `make scenario name=burst`
-	$(COMPOSE) exec app php artisan scenario:run $(name)
+scenario: ## Run one scenario, e.g. `make scenario name=burst` (`name=--list` shows all)
+	$(COMPOSE) exec horizon php artisan scenario:run $(name)
 
-demo: ## Run every scenario and write the results to docs/results
-	$(COMPOSE) exec app php artisan scenario:run all
+demo: ## Run every scenario (about 8 minutes) and write the measurements to docs/results
+	$(COMPOSE) exec horizon php artisan scenario:run all
+
+demo-scale: ## Repeat the burst with twice the workers: the rate limit must still hold
+	WORKERS_PER_CHANNEL=8 FAIR_WORKERS_PER_CHANNEL=2 $(COMPOSE) up -d horizon
+	sleep 8
+	$(COMPOSE) exec horizon php artisan scenario:run burst --as=burst-double-workers
+	$(COMPOSE) up -d horizon

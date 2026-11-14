@@ -8,6 +8,7 @@ use App\Modules\Observability\ObservabilityServiceProvider;
 use App\Modules\Templates\TemplatesServiceProvider;
 use App\Providers\AppServiceProvider;
 use App\Providers\HorizonServiceProvider;
+use App\Scenarios\ScenariosServiceProvider;
 
 return [
     AppServiceProvider::class,
@@ -16,4 +17,5 @@ return [
     NotificationsServiceProvider::class,
     TemplatesServiceProvider::class,
     DeliveryServiceProvider::class,
+    ScenariosServiceProvider::class,
 ];

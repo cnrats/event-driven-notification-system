@@ -90,4 +90,9 @@ return [
     'metrics' => [
         'redis_database' => (int) env('METRICS_REDIS_DB', 2),
     ],
+
+    // Demo scenarios (`make demo`) call the public API over HTTP.
+    'scenarios' => [
+        'api_url' => (string) env('SCENARIO_API_URL', 'http://app:8000'),
+    ],
 ];

@@ -37,7 +37,14 @@ services:
   horizon:
     <<: *php
     command: ["php", "artisan", "horizon"]
+    environment:
+      # Pool sizes can be overridden from the shell, e.g. `make demo-scale`.
+      WORKERS_PER_CHANNEL: ${WORKERS_PER_CHANNEL:-4}
+      FAIR_WORKERS_PER_CHANNEL: ${FAIR_WORKERS_PER_CHANNEL:-1}
     depends_on: *after-migrations
+    volumes:
+      # `make demo` runs the scenarios here and writes its measurements out.
+      - ./docs/results:/app/docs/results
     # Horizon drains in-flight jobs on SIGTERM; give it longer than the job timeout.
     stop_signal: SIGTERM
     stop_grace_period: 40s
