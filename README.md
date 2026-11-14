@@ -31,9 +31,10 @@ then counts what the provider actually received. Raw output is in
 | `idempotency` | The same request with the same key, 30 times at the same moment | One `201`, 29 replays with `200`, **one row, one delivery**. |
 | `schedule` | 200 notifications scheduled 6 s ahead | None sent early. 95 % delivered within 3.0 s of the scheduled time. |
 
-Measured with Docker on a 12-core laptop: 5 worker processes per channel (4 priority, 1 fairness), the mock
-provider answering in about 5 ms. Numbers vary slightly between runs; the
-checks (`at most 100`, `0 failed`, `exactly once`) do not.
+Measured with Docker on a 12-core laptop: 5 worker processes per channel
+(4 priority, 1 fairness), the mock provider answering in about 5 ms. Numbers
+vary a little between runs; `make demo` repeats every measurement and reports
+any check that does not hold.
 
 ![Grafana dashboard during the 10,000-notification burst](docs/images/dashboard.png)
 

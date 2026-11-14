@@ -35,7 +35,7 @@ fix: ## Apply Pint and Rector fixes
 scenario: ## Run one scenario, e.g. `make scenario name=burst` (`name=--list` shows all)
 	$(COMPOSE) exec horizon php artisan scenario:run $(name)
 
-demo: ## Run every scenario (about 8 minutes) and write the measurements to docs/results
+demo: ## Run every scenario (about 6 minutes) and write the measurements to docs/results
 	$(COMPOSE) exec horizon php artisan scenario:run all
 
 demo-scale: ## Repeat the burst with twice the workers: the rate limit must still hold
