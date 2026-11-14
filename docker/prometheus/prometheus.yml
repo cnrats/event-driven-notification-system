@@ -1,0 +1,17 @@
+global:
+  # Short interval so a 30-second burst is visible as a curve, not three dots.
+  scrape_interval: 2s
+  evaluation_interval: 2s
+
+scrape_configs:
+  # Counters and histograms recorded by the API and the workers.
+  - job_name: notification-system
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["app:8000"]
+
+  # What the provider itself saw: the ground truth for the rate limit.
+  - job_name: mock-provider
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["mock-provider:9000"]
