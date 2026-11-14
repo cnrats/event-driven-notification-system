@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Modules\Observability\Http\Middleware\AssignCorrelationId;
+use App\Modules\Observability\Http\Middleware\ForceJsonResponse;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -14,7 +16,11 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        // API routes are registered by each module's service provider.
+        $middleware->api(prepend: [
+            ForceJsonResponse::class,
+            AssignCorrelationId::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(
